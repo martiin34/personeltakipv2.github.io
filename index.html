@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#4f46e5">
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Personel Takip Paneli V2 -Asar Tekstil</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:Arial,sans-serif;background:#eef1f6;min-height:100vh}
+header{background:#4f46e5;color:#fff;padding:16px;text-align:center;font-size:20px}
+.container{max-width:1100px;margin:auto;padding:12px}
+.card{background:#fff;border-radius:10px;padding:12px;margin-bottom:12px;box-shadow:0 2px 6px rgba(0,0,0,0.1);}
+.grid{display:grid;gap:10px}
+.grid-2{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+.grid-4{grid-template-columns:repeat(auto-fit,minmax(140px,1fr))}
+input,select,button{font-family:inherit}
+input,select{width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;margin-bottom:8px;outline:none}
+input:focus,select:focus{border-color:#4f46e5}
+button{border:none;border-radius:8px;padding:10px 12px;cursor:pointer;transition:0.2s}
+button:hover{opacity:0.9}
+.btn{color:#fff} 
+.g{background:#10b981} .b{background:#3b82f6} .o{background:#f59e0b} .r{background:#ef4444} .p{background:#4f46e5}
+table{width:100%;border-collapse:collapse}
+th,td{padding:8px;border-bottom:1px solid #eee;text-align:center}
+th{background:#f1f5f9}
+.summary div{background:#f8fafc;border-radius:8px;padding:10px;text-align:center;font-weight:bold}
+.hidden{display:none}
+.login{max-width:360px;margin:10vh auto;background:#fff;padding:16px;border-radius:12px;box-shadow:0 2px 6px rgba(0,0,0,0.1);}
+.flex{display:flex;gap:8px;flex-wrap:wrap}
+.tag{padding:2px 6px;border-radius:6px;font-size:12px;color:#fff}
+.tag.m{background:#3b82f6} .tag.a{background:#f59e0b} .tag.d{background:#ef4444}
+.print-only{display:none}
+@media print {
+  body * { display: none !important; }
+  .print-only { display:block !important; }
+}
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button {-webkit-appearance: none;margin: 0;}
+canvas{max-width:100%;}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginBox" class="login">
+  <h3>Panele Giriş</h3>
+  <input id="u" placeholder="Kullanıcı adı">
+  <input id="p" type="password" placeholder="Şifre">
+  <button class="btn p" onclick="login()">Giriş</button>
+  <div id="lmsg" style="color:#e11d48;margin-top:6px"></div>
+</div>
+
+<!-- APP -->
+<div id="app" class="hidden">
+<header>Personel Takip Paneli V2 Asar Tekstil </header>
+<div class="container">
+
+<!-- DASHBOARD -->
+<div class="card">
+<h3>Dashboard</h3>
+<div class="grid grid-4 summary">
+  <div id="kisi">Personel: 0</div>
+  <div id="tmaas">Toplam Maaş: 0</div>
+  <div id="tmesai">Toplam Mesai: 0</div>
+  <div id="tnet">Toplam Net: 0</div>
+</div>
+<canvas id="dashboardChart" style="margin-top:12px"></canvas>
+<canvas id="pieChart" style="margin-top:12px"></canvas>
+</div>
+
+<!-- PERSONEL EKLE / DÜZENLE -->
+<div class="card">
+<h3>Personel Ekle / Düzenle</h3>
+<div class="grid grid-2">
+<div>
+<input id="ad" placeholder="Ad Soyad">
+<input id="tel" placeholder="Telefon">
+<input id="maas" type="number" placeholder="Temel Maaş">
+</div>
+<div>
+<input id="mucret" type="number" placeholder="Mesai Saat Ücreti">
+<input id="gkes" type="number" placeholder="Devamsızlık Günlük Kesinti">
+<div class="flex">
+<button class="btn g" onclick="ekle()">Kaydet</button>
+<button class="btn o hidden" id="updateBtn" onclick="update()">Güncelle</button>
+</div>
+</div>
+</div>
+</div>
+
+<!-- İŞLEM EKLE -->
+<div class="card">
+<h3>İşlem Ekle</h3>
+<div class="grid grid-2">
+<div>
+<select id="ps"></select>
+<select id="tip">
+  <option value="mesai">Mesai (saat)</option>
+  <option value="avans">Avans (₺)</option>
+  <option value="dev">Devamsızlık (gün)</option>
+</select>
+</div>
+<div class="flex">
+<input id="val" type="number" placeholder="Saat / Gün / Tutar">
+<button class="btn b" onclick="islem()">Kaydet</button>
+</div>
+</div>
+</div>
+
+<!-- PERSONEL LİSTESİ -->
+<div class="card">
+<h3>Personel Listesi</h3>
+<input id="search" placeholder="Ad veya telefon ara" onkeyup="filterList()">
+<table>
+<thead>
+<tr>
+<th>Ad</th><th>Telefon</th><th>Maaş</th><th>Mesai</th><th>Avans</th><th>Kesinti</th><th>Net</th><th>Detay</th><th>Düzenle</th><th>Sil</th>
+</tr>
+</thead>
+<tbody id="liste"></tbody>
+</table>
+</div>
+
+<!-- DETAY -->
+<div id="detayBox" class="card hidden">
+<h3 id="dAd">Detay</h3>
+<div class="print-only" id="bordro"></div>
+<table>
+<thead>
+<tr><th>Tarih</th><th>İşlem</th><th>Değer</th><th>Tutar</th></tr>
+</thead>
+<tbody id="hareket"></tbody>
+</table>
+<div class="flex no-print">
+<button class="btn o" onclick="bordroYaz()">Bordro Yazdır</button>
+<button class="btn p" onclick="kapatDetay()">Kapat</button>
+</div>
+</div>
+
+</div></div>
+
+<script>
+let USER="admin", PASS=localStorage.getItem("ptp_pass")||"1234";
+let data=JSON.parse(localStorage.getItem("ptp_v2"))||[];
+let editIndex = null;
+let dashboardChart = null, pieChart=null;
+
+function save(){localStorage.setItem("ptp_v2",JSON.stringify(data));}
+function qs(id){return document.getElementById(id)}
+
+function login(){
+  if(qs("u").value===USER && qs("p").value===PASS){
+    qs("loginBox").classList.add("hidden");
+    qs("app").classList.remove("hidden");
+    render();
+  }else{
+    qs("lmsg").innerText="Hatalı kullanıcı veya şifre";
+  }
+}
+
+function ekle(){
+  const p={id: Date.now(), ad:qs("ad").value, tel:qs("tel").value, maas:+qs("maas").value||0, mu:+qs("mucret").value||0, gk:+qs("gkes").value||0, mesai:0,avans:0,kes:0,h:[]};
+  if(!p.ad) return alert("Ad girin");
+  data.push(p); save(); render(); clearForm();
+}
+function clearForm(){["ad","tel","maas","mucret","gkes"].forEach(i=>qs(i).value="");qs("updateBtn").classList.add("hidden");editIndex=null;}
+function edit(i){const p=data[i];qs("ad").value=p.ad;qs("tel").value=p.tel;qs("maas").value=p.maas;qs("mucret").value=p.mu;qs("gkes").value=p.gk;qs("updateBtn").classList.remove("hidden");editIndex=i;}
+function update(){if(editIndex===null) return;const p=data[editIndex];p.ad=qs("ad").value;p.tel=qs("tel").value;p.maas=+qs("maas").value||0;p.mu=+qs("mucret").value||0;p.gk=+qs("gkes").value||0;save(); render(); clearForm();}
+function islem(){const i=+qs("ps").value, tip=qs("tip").value, v=+qs("val").value||0;const p=data[i]; if(!p) return; let tut=0;if(tip==="mesai"){tut=v*p.mu;p.mesai+=tut;} if(tip==="avans"){tut=v;p.avans+=tut;} if(tip==="dev"){tut=v*p.gk;p.kes+=tut;} p.h.push({t:new Date().toLocaleString(), tip, v, tut}); save(); render(); qs("val").value="";}
+function sil(i){if(confirm("Silinsin mi?")){data.splice(i,1); save(); render();}}
+function detay(i){const p=data[i]; if(!p) return; qs("detayBox").classList.remove("hidden"); qs("dAd").innerText=p.ad+" - Hareketler"; let h=""; p.h.forEach(x=>{const tag=x.tip==="mesai"?"m":(x.tip==="avans"?"a":"d"); h+=`<tr><td>${x.t}</td><td><span class="tag ${tag}">${x.tip}</span></td><td>${x.v}</td><td>${x.tut}</td></tr>`}); qs("hareket").innerHTML=h||"<tr><td colspan=4>Kayıt yok</td></tr>"; const net=p.maas+p.mesai-p.avans-p.kes; qs("bordro").innerHTML=`<h2>Maaş Bordrosu</h2><p><b>Ad:</b> ${p.ad}</p><p><b>Temel Maaş:</b> ${p.maas}</p><p><b>Mesai:</b> ${p.mesai}</p><p><b>Avans:</b> ${p.avans}</p><p><b>Kesinti:</b> ${p.kes}</p><h3>NET: ${net}</h3>`;}
+function kapatDetay(){qs("detayBox").classList.add("hidden");}
+function bordroYaz(){const w=window.open("","_blank"); w.document.write(`<html><head><title>Bordro</title><style>body{font-family:Arial;padding:20px;}h2,h3,p{margin:8px 0;}table{width:100%;border-collapse:collapse;margin-top:10px;}th,td{border:1px solid #000;padding:6px;text-align:center;}</style></head><body>${qs("bordro").innerHTML}</body></html>`); w.print(); w.close();}
+
+function render(){
+  qs("ps").innerHTML=data.map((p,i)=>`<option value="${i}">${p.ad}</option>`).join("");
+  let html="", tma=0,tme=0,tn=0;
+  const labels=[], maaşlar=[], mesailer=[], netler=[];
+  let toplamM=0, toplamMes=0, toplamAv=0, toplamKes=0;
+  data.forEach((p,i)=>{
+    const net=p.maas+p.mesai-p.avans-p.kes;
+    tma+=p.maas; tme+=p.mesai; tn+=net;
+    labels.push(p.ad); maaşlar.push(p.maas); mesailer.push(p.mesai); netler.push(net);
+    toplamM+=p.maas; toplamMes+=p.mesai; toplamAv+=p.avans; toplamKes+=p.kes;
+    html+=`<tr><td>${p.ad}</td><td>${p.tel||""}</td><td>${p.maas}</td><td style="color:#10b981">${p.mesai}</td><td style="color:#f59e0b">${p.avans}</td><td style="color:#ef4444">${p.kes}</td><td><b>${net}</b></td><td><button class="btn b" onclick="detay(${i})">Gör</button></td><td><button class="btn o" onclick="edit(${i})">Düzenle</button></td><td><button class="btn r" onclick="sil(${i})">Sil</button></td></tr>`;
+  });
+  qs("liste").innerHTML=html||"<tr><td colspan=10>Kayıt yok</td></tr>";
+  qs("kisi").innerText="Personel: "+data.length;
+  qs("tmaas").innerText="Toplam Maaş: "+tma;
+  qs("tmesai").innerText="Toplam Mesai: "+tme;
+  qs("tnet").innerText="Toplam Net: "+tn;
+
+  if(dashboardChart) dashboardChart.destroy();
+  const ctx=document.getElementById('dashboardChart').getContext('2d');
+  dashboardChart=new Chart(ctx,{type:'bar',data:{labels, datasets:[{label:'Maaş', data:maaşlar, backgroundColor:'#10b981'},{label:'Mesai', data:mesailer, backgroundColor:'#3b82f6'},{label:'Net', data:netler, backgroundColor:'#f59e0b'}]},options:{responsive:true,plugins:{legend:{position:'top'}},scales:{y:{beginAtZero:true}}}});
+  
+  if(pieChart) pieChart.destroy();
+  const ctx2=document.getElementById('pieChart').getContext('2d');
+  pieChart=new Chart(ctx2,{type:'pie',data:{labels:['Toplam Maaş','Toplam Mesai','Toplam Avans','Toplam Kesinti'],datasets:[{data:[toplamM,toplamMes,toplamAv,toplamKes],backgroundColor:['#10b981','#3b82f6','#f59e0b','#ef4444']}]},options:{responsive:true}});
+}
+
+function filterList(){const q=qs("search").value.toLowerCase();document.querySelectorAll("#liste tr").forEach(r=>r.style.display=r.innerText.toLowerCase().includes(q)?"":"none");}
+</script>
+</body>
+</html>
