@@ -1,7 +1,7 @@
 {
   "name": "Personel Takip Paneli V2",
   "short_name": "PTP V2",
-  "start_url": "./personel_takip.html",
+  "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#eef1f6",
   "theme_color": "#4f46e5",
@@ -9,7 +9,12 @@
     {
       "src": "icon.png",
       "sizes": "192x192",
-      "type": ""C:\Yeni klasör\depositphotos_79408928-stock-illustration-staff-icon.png""
+      "type": "image/png"
+    },
+    {
+      "src": "icon.png",
+      "sizes": "512x512",
+      "type": "image/png"
     }
   ]
 }
